@@ -143,6 +143,7 @@ class FlickrCurlAPI {
 		// read in value from cache file - check config
 		$f = fopen($this->cacheFile, "r");
 		$this->rawResponse = fread($f, filesize($this->cacheFile));
+		if ($this->debug) var_dump($this->rawResponse);
 		fclose($f);
 		self::phpResponseObject();
 		if ($this->debug){
