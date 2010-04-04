@@ -1,6 +1,7 @@
 <?php
 /*
  * Flickr Curl Api Wrapper
+ * @author Ketan Kunj Majmudar
  * 
  * Simple Curl wrapper that sets up a call to the flickr API and produces a php object and raw response data in json or xml.
  *
@@ -16,11 +17,18 @@ class FlickrCurlAPI {
 	public $rawResponse = '';
 	public $objectResponse = '';
 	public $debug = 0;
+	public $fail = false;
+	public $cache = false;
+	public $cachePeriod = 5;
+	public $methodInstance = '';
+	public $cachePath = '';
+	public $cacheFile = '';
 	
 	public function __construct($userid, $debug=0) {
 		$this->userid = $userid;
 		$this->debug = $debug;
 		ini_set('display_errors',$debug);
+		date_default_timezone_set('Europe/London');
 	return true;
 	}
 
@@ -46,12 +54,36 @@ class FlickrCurlAPI {
  *
  */
 	public function api_flickr_call() {
+		$this->cacheFile = $this->cachePath . $this->method . '-' . $this->methodInstance; 
+// Checking to see if the cache exists and will return this version instead.
+/*	echo '<br />' .$this->cacheFile;
+	echo '<br />' .file_exists($this->cacheFile);
+	echo '<br />' .time();
+	echo '<br />' .$this->cachePeriod * 60;
+	echo '<br />' .filemtime($this->cacheFile);
+*/	
+	
+		if (file_exists($this->cacheFile) && ((time() - ($this->cachePeriod * 60)) < filemtime($this->cacheFile))){
+			self::readFromCache();
+			return true;
+		}
+	
 		self::buildRequestString();
 		self::sendAPIRequest();
 		self::phpResponseObject();
 		if ($this->debug){
 			var_dump($this->rawResponse);
 			var_dump($this->objectResponse);
+		}
+		// error handling required here
+		$checkResponse = get_object_vars($this->objectResponse->attributes());
+		if ($checkResponse['@attributes']['stat'] == 'fail'){
+			$this->fail = true;
+			$err = get_object_vars($this->objectResponse->children()->attributes());
+			echo '<span class="error">'.$err['@attributes']['code'] . ' ' . $err['@attributes']['msg'].' !</span>';
+			return false;
+		} elseif($this->cache) {
+			self::writeToCache();
 		}
 	return true;
 	}
@@ -67,7 +99,6 @@ class FlickrCurlAPI {
 		curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
 		curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
 		$this->rawResponse = curl_exec($curl);
-// error handling required here
 		curl_close($curl);
 	return true;
 	}
@@ -85,5 +116,45 @@ class FlickrCurlAPI {
 		}  
 	return true;
 	}
+/*
+ * Cache XML response - write
+ * 
+ * 
+ *
+ */	
+	public function writeToCache(){
+		$f = fopen($this->cacheFile, "w");
+		if (fwrite($f, $this->rawResponse) == false) {
+			throw new Exception ("Can't write the file (please check the folder permissions) : " . $this->cacheFile);
+			return false;
+		}
+		fclose($f);
+		echo '<!-- Written to cache -->';
+		return true;
+	}
+/*
+ * Cache XML response - Check exsiting and read in new value
+ * 
+ * 
+ *
+ */	
+	public function readFromCache(){
+		// read in value from cache file - check config
+		$f = fopen($this->cacheFile, "r");
+		$this->rawResponse = fread($f, filesize($this->cacheFile));
+		fclose($f);
+		self::phpResponseObject();
+		if ($this->debug){
+			var_dump($this->rawResponse);
+			var_dump($this->objectResponse);
+		}
+	echo "<!-- Read From Cache -->";
+	return true;
+}	
+		
+		// check the validity of file
+		// if problem reading then go to pull requests
+
+
 }  
 ?>
