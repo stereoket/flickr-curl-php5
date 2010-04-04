@@ -151,10 +151,26 @@ class FlickrCurlAPI {
 	echo "<!-- Read From Cache -->";
 	return true;
 }	
-		
-		// check the validity of file
-		// if problem reading then go to pull requests
-
-
+/*
+ * Preapre Photos into thumbnails
+ * 
+ * The URL for various sizes and the output code to link the image to the original flickr photo page can be set here.
+ *
+ */	
+	public function preparePhotoThumbnails(){
+	
+		$photoCount = count($this->objectResponse->photos->photo);
+		for ($i=0; $i <= $photoCount; $i++){
+			$photoArray[] = get_object_vars($this->objectResponse->photos->photo[$i]);
+		}
+		for ($i=0; $i < (count($photoArray) - 1); $i++){
+			$t_url = "http://farm" . $photoArray[$i]['@attributes']['farm'] .  ".static.flickr.com/" . $photoArray[$i]['@attributes']['server'] . "/" . $photoArray[$i]['@attributes']['id'] . "_" .  $photoArray[$i]['@attributes']['secret'] . "_" . "t.jpg";
+			
+			$m_url = "http://farm" . $photoArray[$i]['@attributes']['farm'] .  ".static.flickr.com/" . $photoArray[$i]['@attributes']['server'] . "/" . $photoArray[$i]['@attributes']['id'] . "_" .  $photoArray[$i]['@attributes']['secret'] . "_" . "m.jpg";
+			
+			$imgArray[] = '<a href="http://www.flickr.com/photos/'.$this->userid.'/'.$photoArray[$i]['@attributes']['id'].'/" id="flickrLinks"><img src="'.$m_url.'" title="'.$photoArray[$i]['@attributes']['title'].'" /></a>';
+		}
+		return $imgArray;
+	}
 }  
 ?>
