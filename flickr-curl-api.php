@@ -55,6 +55,7 @@ class FlickrCurlAPI {
  */
 	public function api_flickr_call() {
 		$this->cacheFile = $this->cachePath . $this->method . '-' . $this->methodInstance; 
+		if ($this->debug) var_dump($this->cacheFile);
 // Checking to see if the cache exists and will return this version instead.
 /*	echo '<br />' .$this->cacheFile;
 	echo '<br />' .file_exists($this->cacheFile);
